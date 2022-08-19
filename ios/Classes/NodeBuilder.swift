@@ -1,4 +1,5 @@
 import ARKit
+import GLTFSceneKit
 
 func createNode(_ geometry: SCNGeometry?, fromDict dict: Dictionary<String, Any>, forDevice device: MTLDevice?) -> SCNNode {
     let dartType = dict["dartType"] as! String
@@ -38,7 +39,7 @@ func updateNode(_ node: SCNNode, fromDict dict: Dictionary<String, Any>, forDevi
     }
 }
 
-fileprivate func createReferenceNode(_ dict: Dictionary<String, Any>) -> SCNReferenceNode {
+fileprivate func createReferenceNode(_ dict: Dictionary<String, Any>) -> SCNNode {
     let url = dict["url"] as! String
     var referenceUrl: URL
     if let bundleURL = Bundle.main.url(forResource: url, withExtension: nil){
@@ -46,9 +47,16 @@ fileprivate func createReferenceNode(_ dict: Dictionary<String, Any>) -> SCNRefe
     }else{
         referenceUrl = URL(fileURLWithPath: url)
     }
-    let node = SCNReferenceNode(url: referenceUrl)
-    node?.load()
-    return node!
+    var node: SCNNode
+    do {
+        let sceneSource = try GLTFSceneSource(url: referenceUrl)
+        let scene = try sceneSource.scene()
+        node = scene.rootNode
+    } catch {
+        print("\(error.localizedDescription)")
+        node = SCNNode(geometry: SCNBox(width: 0, height: 0, length: 0, chamferRadius: 0))
+    }
+    return node
 }
 
 fileprivate func createPhysicsBody(_ dict: Dictionary<String, Any>, forDevice device: MTLDevice?) -> SCNPhysicsBody {
